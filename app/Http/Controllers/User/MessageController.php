@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Events\MessageRead;
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
@@ -37,6 +38,7 @@ class MessageController extends Controller
 
        
         if($storedMessage){
+            broadcast(new MessageSent($storedMessage));
             return response()->json([
                 'status' => true,
                 'data' => $storedMessage,
@@ -69,13 +71,82 @@ class MessageController extends Controller
             })
             ->orderBy('created_at', 'asc')
             ->get();
-        event(new MessageSent($messages));
+        // event(new MessageSent($messages));
         // Check if messages were found
         if ($messages->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'No messages found'], 404);
         }
 
         return response()->json(['success' => true, 'messages' => $messages]);
+    }
 
+    public function deleteMessage($messageId)
+    {
+
+        $loggedInUser = auth()->user()->id;
+
+        if (!$loggedInUser) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not logged in',
+            ], 401);
+        }
+
+        $findedMessage = Message::find($messageId);
+        if (!$findedMessage) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Message not found',
+            ], 404);
+        }
+        $deletedMessage = Message::where('id', $messageId)
+            ->where(function ($query) use ($loggedInUser) {
+                $query->where('sender_id', $loggedInUser)
+                    ->orWhere('receiver_id', $loggedInUser);
+            })
+            ->delete();
+
+        if ($deletedMessage) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Message deleted successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete message or message not found',
+            ], 404);
+        }
+    }
+
+    public function markMessagesAsRead(Request $request)
+    {
+        $loggedInUser = auth()->user()->id;
+
+        if (!$loggedInUser) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not logged in',
+            ], 401);
+        }
+
+        $messages = DB::table('messages')
+            ->where('sender_id', $request->sender_id)
+            ->where('receiver_id', $request->receiver_id)
+            ->where('is_read', false)
+            ->get();
+
+        foreach ($messages as $message) {
+            broadcast(new MessageRead($message->id, $request->sender_id)); // notify sender
+        }
+
+        DB::table('messages')
+            ->whereIn('id', $messages->pluck('id'))
+            ->update(['is_read' => true]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Messages marked as read and broadcasted successfully',
+        ], 200);
     }
 }

@@ -3,9 +3,7 @@
 namespace App\Events;
 
 use App\Models\Message;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -16,6 +14,7 @@ class MessageSent implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
+
     /**
      * Create a new event instance.
      */
@@ -33,5 +32,37 @@ class MessageSent implements ShouldBroadcast
     {
         return new PrivateChannel('chat.' . $this->message->receiver_id);
     }
-   
+
+    // public function broadcastWith()
+    // {
+    //     return [
+    //         'id' => $this->message->id,
+    //         'sender_id' => $this->message->sender_id,
+    //         'receiver_id' => $this->message->receiver_id,
+    //         'message' => $this->message->message,
+    //         'created_at' => $this->message->created_at->toDateTimeString(),
+    //     ];
+    // }
+    public function broadcastWith()
+    {
+        logger('Broadcasting Message:', [
+            'id' => $this->message->id,
+            'sender_id' => $this->message->sender_id,
+            'receiver_id' => $this->message->receiver_id,
+            'message' => $this->message->message,
+        ]);
+
+        return [
+            'id' => $this->message->id,
+            'sender_id' => $this->message->sender_id,
+            'receiver_id' => $this->message->receiver_id,
+            'message' => $this->message->message,
+            'created_at' => $this->message->created_at->toDateTimeString(),
+        ];
+    }
+
+    public function broadcastAs()
+    {
+        return 'message.sent';
+    }
 }

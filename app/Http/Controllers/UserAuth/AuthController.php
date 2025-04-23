@@ -44,6 +44,51 @@ class AuthController extends Controller
         }
     }
 
+    public function uploadProfileImage(Request $request, $userId)
+    {
+        $findUser = DB::table('users')->where('id', $userId)->first();
+
+        if (!$findUser) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        $validation = Validator::make($request->all(), [
+            'profileImage' => 'required|image|mimes:jpg,jpeg,png',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json(['error' => $validation->errors()], 422);
+        }
+
+        // Save the image
+        if ($request->hasFile('profileImage')) {
+            $image = $request->file('profileImage');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('uploads/'), $filename);
+
+            $imagePath = 'uploads/' . $filename;
+
+            // Optionally delete old image if exists
+            $oldImage = DB::table('users')->where('id', $userId)->value('profileImage');
+            if ($oldImage && file_exists(public_path($oldImage))) {
+                unlink(public_path($oldImage));
+            }
+
+            // Update profile_image using Query Builder
+            DB::table('users')
+                ->where('id', $userId)
+                ->update(['profileImage' => $filename]);
+
+            return response()->json([
+                'message' => 'Profile image updated successfully.',
+                'profileImage' => $filename,
+            ]);
+        } else {
+            return response()->json(['error' => 'No image file found'], 422);
+        }
+    }
+
+
     public function login(Request $request)
     {
         // Validate the request data
