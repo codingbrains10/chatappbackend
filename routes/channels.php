@@ -37,3 +37,8 @@ Broadcast::channel('chat.{userId}', function ($user, $userId) {
 Broadcast::channel('chat.{userId}', function ($user) {
     return !is_null($user);
 });
+
+
+Broadcast::channel('presence-chat', function ($user) {
+    return ['id' => $user->id, 'name' => $user->name];
+});
