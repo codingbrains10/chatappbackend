@@ -162,8 +162,7 @@ class AuthController extends Controller
     }
 
     public function resetPassword(Request $request){
-        $validation = Validator::make($request->all(),[
-            'email' => 'required|string|email|max:255',
+        $validation = Validator::make($request->all(), [
             'password' => 'required|string|min:4',
         ]);
 
@@ -173,7 +172,9 @@ class AuthController extends Controller
 
         // Check if the user exists
         $user = DB::table('users')->where('email', $request->email)->update(['password' => Hash::make($request->password)]);
-
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
         // Delete the OTP record from the database
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 

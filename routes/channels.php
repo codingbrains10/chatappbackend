@@ -13,24 +13,7 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
-// Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-//     return (int) $user->id === (int) $id;
-// });
 
-
-// Broadcast::channel('chat.{receiverId}', function ($user, $receiverId) {
-//     // Ensure that the user is authenticated and can access the channel
-//     return (int) $user->id === (int) $receiverId;
-// });
-
-
-// Broadcast::channel('chat', function ($user) {
-//     return $user !== null;
-// });
-
-// Broadcast::channel('chat.{receiverId}', function ($user, $receiverId) {
-//     return (int) $user->id === (int) $receiverId;
-// });
 Broadcast::channel('chat.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });
@@ -42,3 +25,4 @@ Broadcast::channel('chat.{userId}', function ($user) {
 Broadcast::channel('presence-chat', function ($user) {
     return ['id' => $user->id, 'name' => $user->name];
 });
+
