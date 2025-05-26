@@ -46,6 +46,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
-
 Route::post('/send-otp', [MobileAuthController::class, 'sendOtp']);
 Route::post('/verify-otp', [MobileAuthController::class, 'verifyOtp']);
